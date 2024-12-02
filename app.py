@@ -198,7 +198,7 @@ def main():
         if not youtube_api_key or not secret_key:
             st.error("Please provide both YouTube API key and OpenAI API key.")
         else:
-            process_keyword(keyword, language, youtube_api_key, openai_api_key)
+            process_keyword(keyword, language, youtube_api_key, secret_key)
 
 if __name__ == "__main__":
     main()
