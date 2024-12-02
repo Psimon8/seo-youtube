@@ -24,6 +24,9 @@ def GPT35(prompt, systeme, secret_key, temperature=0.7, model="gpt-4o-mini", max
     }
 
     response = requests.post(url, headers=headers, json=payload)
+    if response.status_code == 401:
+        st.error("Unauthorized access to OpenAI API. Please check your API key.")
+        return ""
     response.raise_for_status()
     return response.json()["choices"][0]["message"]["content"]
 
@@ -88,7 +91,7 @@ except FileNotFoundError:
 
 category_dict = {str(category['id']): category['name'] for category in yt_category_data.get('categories', [])}
 
-def get_top_videos(api_key: str, query: str, language: str, max_results: int = 5) -> Optional[List[dict]]:
+def get_top_videos(api_key: str, query: str, language: str, openai_api_key: str, max_results: int = 5) -> Optional[List[dict]]:
     url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&type=video&maxResults={max_results}&relevanceLanguage={language}&key={api_key}"
     try:
         response = requests.get(url)
@@ -104,10 +107,10 @@ def get_top_videos(api_key: str, query: str, language: str, max_results: int = 5
             video_data = video_response.json().get('items', [])[0]
             
             original_title = video_data['snippet']['title']
-            optimized_title = generate_optimized_title(api_key, original_title)
+            optimized_title = generate_optimized_title(openai_api_key, original_title)
             
             original_description = video_data['snippet']['description']
-            optimized_description = generate_optimized_description(api_key, original_description)
+            optimized_description = generate_optimized_description(openai_api_key, original_description)
             
             video_details.append({
                 'original_title': original_title,
@@ -159,7 +162,7 @@ def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_ap
             st.write(f"{suggestion}")
 
     # Fetch top 5 videos
-    top_videos = get_top_videos(youtube_api_key, keyword, language)
+    top_videos = get_top_videos(youtube_api_key, keyword, language, openai_api_key)
     if top_videos:
         st.write(f"\nTop 5 Related Videos:")
         for i, video in enumerate(top_videos, 1):
@@ -189,16 +192,16 @@ def main():
     st.title("YouTube Video Fetcher")
     
     youtube_api_key = st.text_input("Enter your YouTube API key:")
-    secret_key = st.text_input("Enter your OpenAI API key:")
+    openai_api_key = st.text_input("Enter your OpenAI API key:")
     
     keyword = st.text_input("Enter a keyword to fetch top 5 videos:")
     language = st.text_input("Enter the language code (e.g., 'en' for English, 'fr' for French):")
 
     if st.button("Fetch Videos"):
-        if not youtube_api_key or not secret_key:
+        if not youtube_api_key or not openai_api_key:
             st.error("Please provide both YouTube API key and OpenAI API key.")
         else:
-            process_keyword(keyword, language, youtube_api_key, secret_key)
+            process_keyword(keyword, language, youtube_api_key, openai_api_key)
 
 if __name__ == "__main__":
     main()
