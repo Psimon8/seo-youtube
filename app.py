@@ -104,10 +104,10 @@ def get_top_videos(api_key: str, query: str, language: str, max_results: int = 5
             video_data = video_response.json().get('items', [])[0]
             
             original_title = video_data['snippet']['title']
-            optimized_title = generate_optimized_title(openAI_API_KEY, original_title)
+            optimized_title = generate_optimized_title(api_key, original_title)
             
             original_description = video_data['snippet']['description']
-            optimized_description = generate_optimized_description(openAI_API_KEY, original_description)
+            optimized_description = generate_optimized_description(api_key, original_description)
             
             video_details.append({
                 'original_title': original_title,
