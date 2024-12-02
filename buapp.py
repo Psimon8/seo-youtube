@@ -147,14 +147,12 @@ def analyze_video_content(video_id: str, language: str = 'fr') -> str:
         transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[language])
         text = ' '.join([entry['text'] for entry in transcript])
         return text
-    except CouldNotRetrieveTranscript:
-        return "No Transcript"
     except Exception as e:
         st.error(f"Error fetching transcript: {e}")
         return ""
 
-def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_api_key: str, max_results: int) -> None:
-    st.write(f"\nFetching top {max_results} videos for '{keyword}' in '{language}' language...")
+def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_api_key: str) -> None:
+    st.write(f"\nFetching top 5 videos for '{keyword}' in '{language}' language...")
     
     # Fetch search suggestions
     suggestions = get_search_suggestions(youtube_api_key, keyword)
@@ -163,10 +161,10 @@ def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_ap
         for suggestion in suggestions[:10]:
             st.write(f"{suggestion}")
 
-    # Fetch top videos
-    top_videos = get_top_videos(youtube_api_key, keyword, language, openai_api_key, max_results)
+    # Fetch top 5 videos
+    top_videos = get_top_videos(youtube_api_key, keyword, language, openai_api_key)
     if top_videos:
-        st.write(f"\nTop {max_results} Related Videos:")
+        st.write(f"\nTop 5 Related Videos:")
         for i, video in enumerate(top_videos, 1):
             st.write(f"{i}. {video['original_title']}")
             st.write(f"   Optimized Title: {video['optimized_title']}")
@@ -183,7 +181,7 @@ def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_ap
             st.write(f"   Channel: {video['channel_title']}")
             
             # Print the transcript of the videos
-            if i <= max_results:
+            if i <= 5:
                 try:
                     transcript = analyze_video_content(video['url'].split('=')[-1], language)
                     st.write(f"   Transcript: {transcript}")
@@ -193,19 +191,17 @@ def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_ap
 def main():
     st.title("YouTube Video Fetcher")
     
-    with st.sidebar:
-        youtube_api_key = st.text_input("Enter your YouTube API key:")
-        openai_api_key = st.text_input("Enter your OpenAI API key:")
+    youtube_api_key = st.text_input("Enter your YouTube API key:")
+    openai_api_key = st.text_input("Enter your OpenAI API key:")
     
-    keyword = st.text_input("Enter a keyword to fetch top videos:")
+    keyword = st.text_input("Enter a keyword to fetch top 5 videos:")
     language = st.text_input("Enter the language code (e.g., 'en' for English, 'fr' for French):")
-    max_results = st.slider("Select the number of top videos to fetch (and the number of transcripts):", 1, 10, 5)
 
     if st.button("Fetch Videos"):
         if not youtube_api_key or not openai_api_key:
             st.error("Please provide both YouTube API key and OpenAI API key.")
         else:
-            process_keyword(keyword, language, youtube_api_key, openai_api_key, max_results)
+            process_keyword(keyword, language, youtube_api_key, openai_api_key)
 
 if __name__ == "__main__":
     main()
