@@ -5,6 +5,13 @@ import json
 import openai   
 import streamlit as st
 
+# Configuration de la page Streamlit
+st.set_page_config(
+    layout="wide",
+    page_title="SEO Youtube",
+    page_icon="🎥"
+)
+
 def GPT35(prompt, systeme, secret_key, temperature=0.7, model="gpt-4o-mini", max_tokens=1200):
     url = "https://api.openai.com/v1/chat/completions"
     
@@ -203,9 +210,20 @@ def main():
         youtube_api_key = st.text_input("Enter your YouTube API key:")
         openai_api_key = st.text_input("Enter your OpenAI API key:")
     
-    keyword = st.text_input("Enter a keyword to fetch top videos:")
-    language = st.text_input("Enter the language code (e.g., 'en' for English, 'fr' for French):")
-    max_results = st.slider("Select the number of top videos to fetch (and the number of transcripts):", 1, 10, 5)
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        keyword = st.text_input("Enter a keyword to fetch top videos:")
+        language = st.selectbox("Enter the language code (e.g., 'en' for English, 'fr' for French):", options=['en', 'fr'], index=1)
+        max_results = st.slider("Select the number of top videos to fetch (and the number of transcripts):", 1, 10, 5)
+    
+    with col2:
+        if keyword:
+            st.write(f"Search Suggestions for '{keyword}':")
+            suggestions = get_search_suggestions(youtube_api_key, keyword)
+            if suggestions:
+                for suggestion in suggestions[:10]:
+                    st.write(f"{suggestion}")
 
     if st.button("Fetch Videos"):
         if not youtube_api_key or not openai_api_key:
