@@ -167,11 +167,11 @@ def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_ap
     st.write(f"\nFetching top {max_results} videos for '{keyword}' in '{language}' language...")
     
     # Fetch search suggestions
-    suggestions = get_search_suggestions(youtube_api_key, keyword)
-    if suggestions:
-        st.write(f"\nSearch Suggestions for '{keyword}':")
-        for suggestion in suggestions[:10]:
-            st.write(f"{suggestion}")
+    #suggestions = get_search_suggestions(youtube_api_key, keyword)
+    #if suggestions:
+       # st.write(f"\nSearch Suggestions for '{keyword}':")
+        #for suggestion in suggestions[:10]:
+         #   st.write(f"{suggestion}")
 
     # Fetch top videos
     top_videos = get_top_videos(youtube_api_key, keyword, language, openai_api_key, max_results)
