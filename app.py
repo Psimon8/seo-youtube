@@ -79,9 +79,14 @@ def generate_optimized_description(api_key: str, video_description: str) -> str:
     return optimized_description
 
 # Load category data from JSON file
-with open('YT_CATEGORY.JSON', 'r', encoding='utf-8') as f:
-    category_data = json.load(f)
-    category_dict = {str(category['id']): category['name'] for category in category_data['categories']}
+try:
+    with open('YT_CATEGORY.JSON', 'r', encoding='utf-8') as f:
+        yt_category_data = json.load(f)
+except FileNotFoundError:
+    st.error("The file YT_CATEGORY.JSON was not found. Please ensure it is in the correct directory.")
+    yt_category_data = {}
+
+category_dict = {str(category['id']): category['name'] for category in yt_category_data.get('categories', [])}
 
 def get_top_videos(api_key: str, query: str, language: str, max_results: int = 5) -> Optional[List[dict]]: #Quelles est le nombre de video a scrapper ? 
     url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&type=video&maxResults={max_results}&relevanceLanguage={language}&key={api_key}"
@@ -99,10 +104,10 @@ def get_top_videos(api_key: str, query: str, language: str, max_results: int = 5
             video_data = video_response.json().get('items', [])[0]
             
             original_title = video_data['snippet']['title']
-            optimized_title = generate_optimized_title(openAI_API_KEY, original_title)
+            optimized_title = generate_optimized_title(api_key, original_title)
             
             original_description = video_data['snippet']['description']
-            optimized_description = generate_optimized_description(openAI_API_KEY, original_description)
+            optimized_description = generate_optimized_description(api_key, original_description)
             
             video_details.append({
                 'original_title': original_title,
