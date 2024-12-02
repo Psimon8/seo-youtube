@@ -54,6 +54,9 @@ def generate_optimized_title(api_key: str, video_title: str) -> str:
     return optimized_title
 
 def generate_optimized_description(api_key: str, video_description: str) -> str:
+    if not video_description:
+        return "No Original Description"
+    
     prompt = (f"Analyse la description suivante d'une vidéo YouTube et génère une version optimisée pour le référencement, en tenant compte des mots-clés, de l'engagement et des bonnes pratiques SEO : {video_description}")
     system_message = (f"Vous êtes un assistant de rédaction compétent et expérimenté, spécialisé dans l'optimisation SEO des contenus, "
     "et particulièrement dans la création de descriptions optimisées pour YouTube. "
@@ -171,7 +174,10 @@ def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_ap
             st.write(f"{i}. {video['original_title']}")
             st.write(f"   Optimized Title: {video['optimized_title']}")
             st.write(f"   Original Description: {video['original_description']}")
-            st.write(f"   Optimized Description: {video['optimized_description']}")
+            if video['original_description']:
+                st.write(f"   Optimized Description: {video['optimized_description']}")
+            else:
+                st.write(f"   Optimized Description: No Original Description")
             st.write(f"   Views: {video['views']:,}")
             st.write(f"   Length: {video['length']}")
             st.write(f"   Published at: {video['published_at']}")
