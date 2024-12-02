@@ -189,13 +189,13 @@ def main():
     st.title("YouTube Video Fetcher")
     
     youtube_api_key = st.text_input("Enter your YouTube API key:")
-    openai_api_key = st.text_input("Enter your OpenAI API key:")
+    secret_key = st.text_input("Enter your OpenAI API key:")
     
     keyword = st.text_input("Enter a keyword to fetch top 5 videos:")
     language = st.text_input("Enter the language code (e.g., 'en' for English, 'fr' for French):")
 
     if st.button("Fetch Videos"):
-        if not youtube_api_key or not openai_api_key:
+        if not youtube_api_key or not secret_key:
             st.error("Please provide both YouTube API key and OpenAI API key.")
         else:
             process_keyword(keyword, language, youtube_api_key, openai_api_key)
