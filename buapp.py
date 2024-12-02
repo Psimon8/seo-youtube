@@ -54,6 +54,9 @@ def generate_optimized_title(api_key: str, video_title: str) -> str:
     return optimized_title
 
 def generate_optimized_description(api_key: str, video_description: str) -> str:
+    if not video_description:
+        return "No Original Description"
+    
     prompt = (f"Analyse la description suivante d'une vidéo YouTube et génère une version optimisée pour le référencement, en tenant compte des mots-clés, de l'engagement et des bonnes pratiques SEO : {video_description}")
     system_message = (f"Vous êtes un assistant de rédaction compétent et expérimenté, spécialisé dans l'optimisation SEO des contenus, "
     "et particulièrement dans la création de descriptions optimisées pour YouTube. "
@@ -147,12 +150,14 @@ def analyze_video_content(video_id: str, language: str = 'fr') -> str:
         transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[language])
         text = ' '.join([entry['text'] for entry in transcript])
         return text
+    except CouldNotRetrieveTranscript:
+        return "No Transcript"
     except Exception as e:
         st.error(f"Error fetching transcript: {e}")
         return ""
 
-def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_api_key: str) -> None:
-    st.write(f"\nFetching top 5 videos for '{keyword}' in '{language}' language...")
+def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_api_key: str, max_results: int) -> None:
+    st.write(f"\nFetching top {max_results} videos for '{keyword}' in '{language}' language...")
     
     # Fetch search suggestions
     suggestions = get_search_suggestions(youtube_api_key, keyword)
@@ -161,15 +166,18 @@ def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_ap
         for suggestion in suggestions[:10]:
             st.write(f"{suggestion}")
 
-    # Fetch top 5 videos
-    top_videos = get_top_videos(youtube_api_key, keyword, language, openai_api_key)
+    # Fetch top videos
+    top_videos = get_top_videos(youtube_api_key, keyword, language, openai_api_key, max_results)
     if top_videos:
-        st.write(f"\nTop 5 Related Videos:")
+        st.write(f"\nTop {max_results} Related Videos:")
         for i, video in enumerate(top_videos, 1):
             st.write(f"{i}. {video['original_title']}")
             st.write(f"   Optimized Title: {video['optimized_title']}")
             st.write(f"   Original Description: {video['original_description']}")
-            st.write(f"   Optimized Description: {video['optimized_description']}")
+            if video['original_description']:
+                st.write(f"   Optimized Description: {video['optimized_description']}")
+            else:
+                st.write(f"   Optimized Description: No Original Description")
             st.write(f"   Views: {video['views']:,}")
             st.write(f"   Length: {video['length']}")
             st.write(f"   Published at: {video['published_at']}")
@@ -181,7 +189,7 @@ def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_ap
             st.write(f"   Channel: {video['channel_title']}")
             
             # Print the transcript of the videos
-            if i <= 5:
+            if i <= max_results:
                 try:
                     transcript = analyze_video_content(video['url'].split('=')[-1], language)
                     st.write(f"   Transcript: {transcript}")
@@ -191,17 +199,19 @@ def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_ap
 def main():
     st.title("YouTube Video Fetcher")
     
-    youtube_api_key = st.text_input("Enter your YouTube API key:")
-    openai_api_key = st.text_input("Enter your OpenAI API key:")
+    with st.sidebar:
+        youtube_api_key = st.text_input("Enter your YouTube API key:")
+        openai_api_key = st.text_input("Enter your OpenAI API key:")
     
-    keyword = st.text_input("Enter a keyword to fetch top 5 videos:")
+    keyword = st.text_input("Enter a keyword to fetch top videos:")
     language = st.text_input("Enter the language code (e.g., 'en' for English, 'fr' for French):")
+    max_results = st.slider("Select the number of top videos to fetch (and the number of transcripts):", 1, 10, 5)
 
     if st.button("Fetch Videos"):
         if not youtube_api_key or not openai_api_key:
             st.error("Please provide both YouTube API key and OpenAI API key.")
         else:
-            process_keyword(keyword, language, youtube_api_key, openai_api_key)
+            process_keyword(keyword, language, youtube_api_key, openai_api_key, max_results)
 
 if __name__ == "__main__":
     main()
