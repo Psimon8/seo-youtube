@@ -80,7 +80,7 @@ def generate_optimized_description(api_key: str, video_description: str) -> str:
 
 # Load category data from JSON file
 try:
-    with open('/seo-youtube/yt_category.json', 'r', encoding='utf-8') as f:
+    with open('YT_CATEGORY.JSON', 'r', encoding='utf-8') as f:
         yt_category_data = json.load(f)
 except FileNotFoundError:
     st.error("The file YT_CATEGORY.JSON was not found. Please ensure it is in the correct directory.")
@@ -88,7 +88,7 @@ except FileNotFoundError:
 
 category_dict = {str(category['id']): category['name'] for category in yt_category_data.get('categories', [])}
 
-def get_top_videos(api_key: str, query: str, language: str, max_results: int = 5) -> Optional[List[dict]]: #Quelles est le nombre de video a scrapper ? 
+def get_top_videos(api_key: str, query: str, language: str, max_results: int = 5) -> Optional[List[dict]]:
     url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&type=video&maxResults={max_results}&relevanceLanguage={language}&key={api_key}"
     try:
         response = requests.get(url)
@@ -104,10 +104,10 @@ def get_top_videos(api_key: str, query: str, language: str, max_results: int = 5
             video_data = video_response.json().get('items', [])[0]
             
             original_title = video_data['snippet']['title']
-            optimized_title = generate_optimized_title(api_key, original_title)
+            optimized_title = generate_optimized_title(openAI_API_KEY, original_title)
             
             original_description = video_data['snippet']['description']
-            optimized_description = generate_optimized_description(api_key, original_description)
+            optimized_description = generate_optimized_description(openAI_API_KEY, original_description)
             
             video_details.append({
                 'original_title': original_title,
@@ -125,7 +125,7 @@ def get_top_videos(api_key: str, query: str, language: str, max_results: int = 5
         
         return video_details
     except requests.RequestException as e:
-        print(f"Error fetching videos: {e}")
+        st.error(f"Error fetching videos: {e}")
         return None
 
 def get_search_suggestions(api_key: str, query: str) -> Optional[List[str]]:
@@ -136,42 +136,54 @@ def get_search_suggestions(api_key: str, query: str) -> Optional[List[str]]:
         suggestions = response.json()[1]
         return suggestions
     except requests.RequestException as e:
-        print(f"Error fetching search suggestions: {e}")
+        st.error(f"Error fetching search suggestions: {e}")
         return None
 
-def analyze_video_content(video_id, language):
-    # Placeholder function for analyzing video content
-    return "Sample transcript"
-
-def fetch_transcript(video_id):
+def analyze_video_content(video_id: str, language: str = 'fr') -> str:
     try:
-        transcript = YouTubeTranscriptApi.get_transcript(video_id)
-        return transcript
-    except CouldNotRetrieveTranscript:
-        print("No Transcript")
+        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[language])
+        text = ' '.join([entry['text'] for entry in transcript])
+        return text
+    except Exception as e:
+        st.error(f"Error fetching transcript: {e}")
+        return ""
 
-def process_keyword(keyword, language, youtube_api_key, openai_api_key):
-    # Placeholder for fetching videos based on keyword
-    videos = [
-        {'url': 'https://www.youtube.com/watch?v=sample1', 'category': 1, 'channel_title': 'Channel 1'},
-        {'url': 'https://www.youtube.com/watch?v=sample2', 'category': 2, 'channel_title': 'Channel 2'},
-        # Add more sample videos as needed
-    ]
-    category_dict = {1: 'Category 1', 2: 'Category 2'}
+def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_api_key: str) -> None:
+    st.write(f"\nFetching top 5 videos for '{keyword}' in '{language}' language...")
+    
+    # Fetch search suggestions
+    suggestions = get_search_suggestions(youtube_api_key, keyword)
+    if suggestions:
+        st.write(f"\nSearch Suggestions for '{keyword}':")
+        for suggestion in suggestions[:10]:
+            st.write(f"{suggestion}")
 
-    for i, video in enumerate(videos):
-        st.write(f"URL: {video['url']}")
-        category_id = video['category']
-        category_name = category_dict.get(category_id, 'Unknown')
-        st.write(f"Category: {category_id} ({category_name})")
-        st.write(f"Channel: {video['channel_title']}")
-
-        if i <= 5:
-            try:
-                transcript = analyze_video_content(video['url'].split('=')[-1], language)
-                st.write(f"Transcript: {transcript}")
-            except Exception as e:
-                st.write(f"Error fetching transcript: {e}")
+    # Fetch top 5 videos
+    top_videos = get_top_videos(youtube_api_key, keyword, language)
+    if top_videos:
+        st.write(f"\nTop 5 Related Videos:")
+        for i, video in enumerate(top_videos, 1):
+            st.write(f"{i}. {video['original_title']}")
+            st.write(f"   Optimized Title: {video['optimized_title']}")
+            st.write(f"   Original Description: {video['original_description']}")
+            st.write(f"   Optimized Description: {video['optimized_description']}")
+            st.write(f"   Views: {video['views']:,}")
+            st.write(f"   Length: {video['length']}")
+            st.write(f"   Published at: {video['published_at']}")
+            st.write(f"   Comments: {video['comments']:,}")
+            st.write(f"   URL: {video['url']}")
+            category_id = video['category']
+            category_name = category_dict.get(category_id, 'Unknown')
+            st.write(f"   Category: {category_id} ({category_name})")
+            st.write(f"   Channel: {video['channel_title']}")
+            
+            # Print the transcript of the videos
+            if i <= 5:
+                try:
+                    transcript = analyze_video_content(video['url'].split('=')[-1], language)
+                    st.write(f"   Transcript: {transcript}")
+                except Exception as e:
+                    st.write(f"   Error fetching transcript: {e}")
 
 def main():
     st.title("YouTube Video Fetcher")
