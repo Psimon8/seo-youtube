@@ -80,7 +80,7 @@ def generate_optimized_description(api_key: str, video_description: str) -> str:
 
 # Load category data from JSON file
 try:
-    with open('YT_CATEGORY.JSON', 'r', encoding='utf-8') as f:
+    with open('/yt_category.json', 'r', encoding='utf-8') as f:
         yt_category_data = json.load(f)
 except FileNotFoundError:
     st.error("The file YT_CATEGORY.JSON was not found. Please ensure it is in the correct directory.")
