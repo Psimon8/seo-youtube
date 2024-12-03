@@ -153,19 +153,15 @@ def get_search_suggestions(api_key: str, query: str) -> Optional[List[str]]:
         return None
 
 def analyze_video_content(video_id: str, language: str = 'fr') -> str:
-    attempts = 3
-    for attempt in range(attempts):
-        try:
-            transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[language])
-            text = ' '.join([entry['text'] for entry in transcript])
-            return text
-        except CouldNotRetrieveTranscript:
-            if attempt < attempts - 1:
-                continue
-            return "No Transcript"
-        except Exception as e:
-            st.error(f"Error fetching transcript: {e}")
-            return ""
+    try:
+        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[language])
+        text = ' '.join([entry['text'] for entry in transcript])
+        return text
+    except CouldNotRetrieveTranscript:
+        return "No Transcript"
+    except Exception as e:
+        st.error(f"Error fetching transcript: {e}")
+        return ""
 
 def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_api_key: str, max_results: int) -> None:
     st.write(f"\nFetching top {max_results} videos for '{keyword}' in '{language}' language...")
@@ -184,23 +180,13 @@ def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_ap
                     st.write("Original Title")
                     st.write(video['original_title'])
                     st.write("Original Description")
-                    st.write(video['original_description'])            
+                    st.write(video['original_description'])
                 with col2:
                     st.write("Optimized Title")
                     st.write(video['optimized_title'])
                     st.write("Optimized Description")
                     st.write(video['optimized_description'])
-                    if st.button(f"Copy Optimized Title and Description {i}", key=f"copy_button_{i}", help="Copy both optimized title and description", use_container_width=True):
-                        st.write(f"Optimized Title and Description {i} copied to clipboard!")
-                        st.experimental_set_query_params(clipboard=f"{video['optimized_title']}\n\n{video['optimized_description']}")
                 with col3:
-                    st.write("Transcript")
-                    transcript = analyze_video_content(video['url'].split('=')[-1], language)
-                    st.write(transcript)
-                    
-                    if st.button(f"Copy Optimized Title and Description {i}"):
-                        st.write(f"Optimized Title and Description {i} copied to clipboard!")
-                        st.experimental_set_query_params(clipboard=f"{video['optimized_title']}\n\n{video['optimized_description']}")
                     st.write("Transcript")
                     transcript = analyze_video_content(video['url'].split('=')[-1], language)
                     st.write(transcript)
