@@ -192,7 +192,7 @@ def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_ap
                     st.write(transcript)
 
 def main():
-    st.title("YouTube Video Fetcher")
+    st.title("Youtube SEO Assistant")
     
     with st.sidebar:
         youtube_api_key = st.text_input("Enter your YouTube API key:")
