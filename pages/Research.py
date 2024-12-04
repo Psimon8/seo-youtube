@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 
 # Fonction pour récupérer les suggestions YouTube
 def get_youtube_suggestions(keyword, api_key, language, max_suggestions):
-    url = f"https://suggestqueries.google.com/complete/search?client=youtube&hl={language}&q={keyword}&key={api_key}"
+    url = f"https://suggestqueries.google.com/complete/search?client=youtube&hl={language}&q={keyword}"
     response = requests.get(url)
     try:
         response_json = response.json()
@@ -18,8 +18,8 @@ def get_youtube_suggestions(keyword, api_key, language, max_suggestions):
 def get_keyword_volumes(keywords, api_key):
     url = 'https://api.keywordseverywhere.com/v1/get_keyword_data'
     my_data = {
-        'country': 'us',
-        'currency': 'USD',
+        'country': 'fr',
+        'currency': 'EUR',
         'dataSource': 'gkp',
         'kw[]': keywords
     }
