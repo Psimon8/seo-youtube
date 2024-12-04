@@ -166,45 +166,33 @@ def analyze_video_content(video_id: str, language: str = 'fr') -> str:
 def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_api_key: str, max_results: int) -> None:
     st.write(f"\nFetching top {max_results} videos for '{keyword}' in '{language}' language...")
     
-    # Fetch search suggestions
-    #suggestions = get_search_suggestions(youtube_api_key, keyword)
-    #if suggestions:
-       # st.write(f"\nSearch Suggestions for '{keyword}':")
-        #for suggestion in suggestions[:10]:
-         #   st.write(f"{suggestion}")
-
     # Fetch top videos
     top_videos = get_top_videos(youtube_api_key, keyword, language, openai_api_key, max_results)
     if top_videos:
         st.write(f"\nTop {max_results} Related Videos:")
         for i, video in enumerate(top_videos, 1):
-            st.write(f"{i}. {video['original_title']}")
-            st.write(f"   Optimized Title: {video['optimized_title']}")
-            st.write(f"   Original Description: {video['original_description']}")
-            if video['original_description']:
-                st.write(f"   Optimized Description: {video['optimized_description']}")
-            else:
-                st.write(f"   Optimized Description: No Original Description")
-            st.write(f"   Views: {video['views']:,}")
-            st.write(f"   Length: {video['length']}")
-            st.write(f"   Published at: {video['published_at']}")
-            st.write(f"   Comments: {video['comments']:,}")
-            st.write(f"   URL: {video['url']}")
-            category_id = video['category']
-            category_name = category_dict.get(category_id, 'Unknown')
-            st.write(f"   Category: {category_id} ({category_name})")
-            st.write(f"   Channel: {video['channel_title']}")
+            st.write(f"#{i} {video['original_title']} Channel: {video['channel_title']}")
+            st.write(f"URL: {video['url']} Category: {category_dict.get(video['category'], 'Unknown')} Views: {video['views']:,} Length: {video['length']} Published at: {video['published_at']} Comments: {video['comments']:,}")
             
-            # Print the transcript of the videos
-            if i <= max_results:
-                try:
+            with st.expander("Details"):
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.write("Original Title")
+                    st.write(video['original_title'])
+                    st.write("Original Description")
+                    st.write(video['original_description'])
+                with col2:
+                    st.write("Optimized Title")
+                    st.write(video['optimized_title'])
+                    st.write("Optimized Description")
+                    st.write(video['optimized_description'])
+                with col3:
+                    st.write("Transcript")
                     transcript = analyze_video_content(video['url'].split('=')[-1], language)
-                    st.write(f"   Transcript: {transcript}")
-                except Exception as e:
-                    st.write(f"   Error fetching transcript: {e}")
+                    st.write(transcript)
 
 def main():
-    st.title("YouTube Video Fetcher")
+    st.title("Youtube SEO Assistant")
     
     with st.sidebar:
         youtube_api_key = st.text_input("Enter your YouTube API key:")
@@ -217,15 +205,18 @@ def main():
         language = st.selectbox("Enter the language code (e.g., 'en' for English, 'fr' for French):", options=['en', 'fr'], index=1)
         max_results = st.slider("Select the number of top videos to fetch (and the number of transcripts):", 1, 10, 5)
     
-    with col2:
-        if keyword:
-            st.write(f"Search Suggestions for '{keyword}':")
-            suggestions = get_search_suggestions(youtube_api_key, keyword)
-            if suggestions:
-                for suggestion in suggestions[:10]:
-                    st.write(f"{suggestion}")
+    fetch_videos = st.button("Fetch Videos")
+    
+    if not fetch_videos:
+        with col2:
+            if keyword:
+                st.write(f"Search Suggestions for '{keyword}':")
+                suggestions = get_search_suggestions(youtube_api_key, keyword)
+                if suggestions:
+                    for suggestion in suggestions[:10]:
+                        st.write(f"{suggestion}")
 
-    if st.button("Fetch Videos"):
+    if fetch_videos:
         if not youtube_api_key or not openai_api_key:
             st.error("Please provide both YouTube API key and OpenAI API key.")
         else:
