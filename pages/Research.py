@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import plotly.graph_objects as go
+import json
 
 # Fonction pour récupérer les suggestions YouTube
 def get_youtube_suggestions(keyword, language, max_suggestions):
@@ -8,7 +9,7 @@ def get_youtube_suggestions(keyword, language, max_suggestions):
     response = requests.get(url)
     if response.status_code == 200:
         try:
-            response_json = response.json()
+            response_json = json.loads(response.text[4:])
             suggestions = response_json[1][:max_suggestions]
             return suggestions
         except (ValueError, IndexError, KeyError) as e:
@@ -76,7 +77,7 @@ def main():
     with st.sidebar:
         max_suggestions = st.slider("Nombre de suggestions à récupérer", 1, 10, 2)
         language = st.text_input("Langue de recherche (code)", value="en")
-        api_key = st.text_input("Clé API Keyword Everywhere")
+        api_key = st.text_input("Clé API Keyword Everywhere", type="password")
     
     root_keyword = st.text_input("Entrez un mot-clé :", placeholder="Exemple : SEO YouTube")
     
