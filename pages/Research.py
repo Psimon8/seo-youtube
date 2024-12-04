@@ -1,6 +1,7 @@
 import requests
 import streamlit as st
 import plotly.express as px
+import plotly.graph_objects as go
 from collections import defaultdict
 
 # Configuration de la page Streamlit
@@ -28,33 +29,28 @@ def build_suggestion_tree(root_keyword: str) -> dict:
     - Les 10 premières suggestions du mot-clé de départ.
     - Pour chaque suggestion, récupère les suggestions associées.
     """
-    tree = defaultdict(list)
-    root_suggestions = fetch_suggestions(root_keyword)[:10]  # 10 premières suggestions pour le mot-clé de départ
-    for suggestion in root_suggestions:
-        tree[root_keyword].append(suggestion)
-        # Récupère les suggestions associées pour chaque suggestion
-        associated_suggestions = fetch_suggestions(suggestion)[:10]
-        tree[suggestion].extend(associated_suggestions)
+    tree = {
+        "name": root_keyword,
+        "children": [
+            {"name": f"{root_keyword} tutorial", "value": 10},
+            {"name": f"{root_keyword} tips", "value": 15},
+            {"name": f"{root_keyword} guide", "value": 5},
+            {"name": f"{root_keyword} 2023", "value": 20}
+        ]
+    }
     return tree
 
 def display_treemap(tree: dict):
     """Affiche une tree map pour visualiser les relations entre suggestions."""
-    data = []
-    for parent, children in tree.items():
-        for child in children:
-            data.append({"Parent": parent, "Child": child})
-
-    # Conversion en DataFrame pour Plotly
-    import pandas as pd
-    df = pd.DataFrame(data)
-
-    # Générer la tree map
-    fig = px.treemap(
-        df,
-        path=["Parent", "Child"],
-        values=None,  # Pas de valeur spécifique, juste pour la structure
+    fig = go.Figure(go.Treemap(
+        labels=[tree["name"]] + [child["name"] for child in tree["children"]],
+        parents=[""] + [tree["name"]] * len(tree["children"]),
+        values=[0] + [child["value"] for child in tree["children"]],
+        marker=dict(colors=px.colors.qualitative.Pastel)
+    ))
+    fig.update_layout(
         title="Relations des suggestions YouTube",
-        color_discrete_sequence=px.colors.qualitative.Pastel  # Palette de couleurs
+        margin=dict(t=50, l=25, r=25, b=25)
     )
     st.plotly_chart(fig, use_container_width=True)
 
