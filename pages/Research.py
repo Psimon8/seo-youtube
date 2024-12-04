@@ -6,10 +6,12 @@ import plotly.graph_objects as go
 def get_youtube_suggestions(keyword, api_key, language, max_suggestions):
     url = f"https://suggestqueries.google.com/complete/search?client=youtube&hl={language}&q={keyword}&key={api_key}"
     response = requests.get(url)
-    if response.status_code == 200:
-        suggestions = response.json()[1][:max_suggestions]
+    try:
+        response_json = response.json()
+        suggestions = response_json[1][:max_suggestions]
         return suggestions
-    else:
+    except ValueError:
+        st.error("Erreur lors de la récupération des suggestions YouTube. Veuillez vérifier votre clé API et réessayer.")
         return []
 
 # Fonction pour récupérer les volumes de recherche des suggestions
@@ -26,9 +28,10 @@ def get_keyword_volumes(keywords, api_key):
         'Authorization': f'Bearer {api_key}'
     }
     response = requests.post(url, data=my_data, headers=my_headers)
-    if response.status_code == 200:
+    try:
         return response.json()
-    else:
+    except ValueError:
+        st.error("Erreur lors de la récupération des volumes de recherche. Veuillez vérifier votre clé API et réessayer.")
         return {}
 
 # Fonction pour construire l'arbre des suggestions
