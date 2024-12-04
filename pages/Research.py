@@ -9,7 +9,8 @@ def get_youtube_suggestions(keyword, language, max_suggestions):
     response = requests.get(url)
     if response.status_code == 200:
         try:
-            response_json = json.loads(response.text[4:])
+            response_text = response.text[4:]
+            response_json = json.loads(response_text)
             suggestions = response_json[1][:max_suggestions]
             return suggestions
         except (ValueError, IndexError, KeyError) as e:
