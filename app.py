@@ -224,3 +224,19 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+def app():
+    st.title("App")
+    st.write("Contenu de l'application principale.")
+
+def buapp():
+    st.title("Backup App")
+    st.write("Contenu de l'application de secours.")
+
+# Menu de navigation
+menu = st.sidebar.radio("Navigation", ["App", "Backup App"])
+
+if menu == "App":
+    app()
+elif menu == "Backup App":
+    buapp()
