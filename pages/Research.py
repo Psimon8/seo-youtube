@@ -3,7 +3,7 @@ import requests
 import plotly.graph_objects as go
 
 # Fonction pour récupérer les suggestions YouTube
-def get_youtube_suggestions(keyword, api_key, language, max_suggestions):
+def get_youtube_suggestions(keyword, language, max_suggestions):
     url = f"https://suggestqueries.google.com/complete/search?client=youtube&hl={language}&q={keyword}"
     response = requests.get(url)
     try:
@@ -11,7 +11,7 @@ def get_youtube_suggestions(keyword, api_key, language, max_suggestions):
         suggestions = response_json[1][:max_suggestions]
         return suggestions
     except ValueError:
-        st.error("Erreur lors de la récupération des suggestions YouTube. Veuillez vérifier votre clé API et réessayer.")
+        st.error("Erreur lors de la récupération des suggestions YouTube.")
         return []
 
 # Fonction pour récupérer les volumes de recherche des suggestions
@@ -35,11 +35,11 @@ def get_keyword_volumes(keywords, api_key):
         return {}
 
 # Fonction pour construire l'arbre des suggestions
-def build_suggestion_tree(root_keyword, api_key, language, max_suggestions):
+def build_suggestion_tree(root_keyword, language, max_suggestions):
     tree = {"name": root_keyword, "children": []}
-    suggestions = get_youtube_suggestions(root_keyword, api_key, language, max_suggestions)
+    suggestions = get_youtube_suggestions(root_keyword, language, max_suggestions)
     for suggestion in suggestions:
-        child_suggestions = get_youtube_suggestions(suggestion, api_key, language, max_suggestions)
+        child_suggestions = get_youtube_suggestions(suggestion, language, max_suggestions)
         tree["children"].append({"name": suggestion, "children": [{"name": cs} for cs in child_suggestions]})
     return tree
 
@@ -75,11 +75,9 @@ def main():
     if st.button("Explorer les suggestions"):
         if not root_keyword.strip():
             st.error("Veuillez entrer un mot-clé valide.")
-        elif not api_key.strip():
-            st.error("Veuillez entrer une clé API valide.")
         else:
             st.info("Recherche des suggestions en cours...")
-            tree = build_suggestion_tree(root_keyword, api_key, language, max_suggestions)
+            tree = build_suggestion_tree(root_keyword, language, max_suggestions)
             if tree:
                 st.success("Suggestions récupérées avec succès.")
                 display_treemap(tree)
