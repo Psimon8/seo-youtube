@@ -4,6 +4,7 @@ import networkx as nx
 from pyvis.network import Network
 from collections import defaultdict
 import json
+import streamlit.components.v1 as components
 
 # Configuration de la page Streamlit
 st.set_page_config(
@@ -47,10 +48,8 @@ def display_mind_map(tree: dict):
 
     net = Network(height="750px", width="100%", bgcolor="#222222", font_color="white")
     net.from_nx(G)
-    net.show("mind_map.html")
-    with open("mind_map.html", "r") as f:
-        html = f.read()
-    st.components.v1.html(html, height=750)
+    html = net.generate_html(notebook=True)
+    components.html(html, height=750)
 
 # Interface utilisateur Streamlit
 def main():
