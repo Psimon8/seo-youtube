@@ -51,6 +51,10 @@ def display_mind_map(tree: dict):
     html = net.generate_html(notebook=True)
     components.html(html, height=750)
 
+def display_suggestions_table(suggestions: list):
+    """Affiche les suggestions dans un tableau."""
+    st.table(suggestions)
+
 # Interface utilisateur Streamlit
 def main():
     st.title("🔍 YouTube Suggest Explorer")
@@ -73,6 +77,7 @@ def main():
                 st.success("Suggestions récupérées avec succès.")
                 display_mind_map(tree)
                 keywords = [child for children in tree.values() for child in children]
+                display_suggestions_table(keywords)
                 volumes = get_keyword_volumes(keywords, api_key)
                 if volumes:
                     st.write("Volumes de recherche des suggestions :")
