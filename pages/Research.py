@@ -72,8 +72,8 @@ def main():
 def get_keyword_volumes(keywords, api_key):
     url = 'https://api.keywordseverywhere.com/v1/get_keyword_data'
     my_data = {
-        'country': 'fr',
-        'currency': 'EUR',
+        'country': 'us',
+        'currency': 'usd',
         'dataSource': 'gkp',
         'kw[]': keywords
     }
