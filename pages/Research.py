@@ -1,10 +1,7 @@
 import requests
 import streamlit as st
-import networkx as nx
-from pyvis.network import Network
 from collections import defaultdict
 import json
-import streamlit.components.v1 as components
 
 # Configuration de la page Streamlit
 st.set_page_config(
@@ -39,18 +36,6 @@ def build_suggestion_tree(root_keyword: str, language: str, max_suggestions: int
         tree[suggestion].extend(associated_suggestions)
     return tree
 
-def display_mind_map(tree: dict):
-    """Affiche un mind map pour visualiser les relations entre suggestions."""
-    G = nx.Graph()
-    for parent, children in tree.items():
-        for child in children:
-            G.add_edge(parent, child)
-
-    net = Network(height="750px", width="100%", bgcolor="#222222", font_color="white")
-    net.from_nx(G)
-    html = net.generate_html(notebook=True)
-    components.html(html, height=750)
-
 def display_suggestions_table(suggestions: list):
     """Affiche les suggestions dans un tableau."""
     st.table(suggestions)
@@ -58,7 +43,7 @@ def display_suggestions_table(suggestions: list):
 # Interface utilisateur Streamlit
 def main():
     st.title("🔍 YouTube Suggest Explorer")
-    st.write("Entrez un mot-clé pour explorer les suggestions de recherche YouTube et leurs relations sous forme de mind map.")
+    st.write("Entrez un mot-clé pour explorer les suggestions de recherche YouTube et leurs relations sous forme de tableau.")
     
     with st.sidebar:
         max_suggestions = st.slider("Nombre de suggestions à récupérer", 1, 10, 2)
@@ -75,7 +60,6 @@ def main():
             tree = build_suggestion_tree(root_keyword, language, max_suggestions)
             if tree:
                 st.success("Suggestions récupérées avec succès.")
-                display_mind_map(tree)
                 keywords = [child for children in tree.values() for child in children]
                 display_suggestions_table(keywords)
                 volumes = get_keyword_volumes(keywords, api_key)
