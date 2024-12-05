@@ -6,4 +6,4 @@ openai
 streamlit
 plotly
 pyvis
-collections
+collection
