@@ -84,12 +84,14 @@ def get_keyword_volumes(keywords, api_key):
     response = requests.post(url, data=my_data, headers=my_headers)
     if response.status_code == 200:
         try:
-            return response.json()
+            data = response.json()
+            st.write("API Response:", data)  # Log the API response
+            return data
         except ValueError:
             st.error("Erreur lors de la récupération des volumes de recherche. Veuillez vérifier votre clé API et réessayer.")
             return {}
     else:
-        st.error(f"Erreur lors de la récupération des volumes de recherche : {response.status_code}")
+        st.error(f"Erreur de l'API: {response.status_code} - {response.text}")
         return {}
 
 if __name__ == "__main__":
