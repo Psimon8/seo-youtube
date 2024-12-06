@@ -38,7 +38,7 @@ def GPT35(prompt, systeme, secret_key, temperature=0.7, model="gpt-4o-mini", max
     return response.json()["choices"][0]["message"]["content"]
 
 def generate_optimized_title(api_key: str, video_title: str, transcript: str, video_description: str) -> str:
-    prompt = (f"Analyse le titre: {video_description}, la description: {video_description} et le contenu {transcript} suivant d'une vidéo YouTube et génère une version optimisée pour le référencement, en tenant compte des mots-clés, de l'engagement et des bonnes pratiques SEO")
+    prompt = (f"Analyse le titre: {video_title}, la description: {video_description} et le contenu {transcript} suivant d'une vidéo YouTube et génère une version optimisée pour le référencement, en tenant compte des mots-clés, de l'engagement et des bonnes pratiques SEO")
     system_message = (f"Vous êtes un assistant de rédaction compétent et expérimenté, spécialisé dans l'optimisation SEO des contenus, "
     "et particulièrement dans la création de titres optimisés pour YouTube. "
     "Votre mission est de rédiger des titres engageants, informatifs et performants en termes de SEO, adaptés aux attentes de l'audience et aux bonnes pratiques de référencement. "
