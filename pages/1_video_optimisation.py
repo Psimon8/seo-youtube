@@ -123,28 +123,35 @@ def main():
         else:
             video_details = get_video_details(youtube_api_key, video_url)
             if video_details:
-                st.write("### Original Video Details")
-                st.write(f"**Title:** {video_details['title']}")
-                st.write(f"**Description:** {video_details['description']}")
-                st.write(f"**Channel:** {video_details['channel_title']}")
-                st.write(f"**Views:** {video_details['views']:,}")
-                st.write(f"**Published At:** {video_details['published_at']}")
-                try:
-                    transcript = YouTubeTranscriptApi.get_transcript(video_details['video_id'], languages=['fr'])
-                    transcript_text = " ".join([entry['text'] for entry in transcript])
-                    word_count = len(transcript_text.split())
-                    st.write(f"**Transcript:** {transcript_text}")
-                    st.write(f"**Word Count:** {word_count}")
-                except CouldNotRetrieveTranscript:
-                    st.error("Could not retrieve transcript for the video.")
-                    transcript_text = ""
+                with st.expander("Original Video Details + Transcript"):
+                    st.write("### Original Video Details")
+                    st.write(f"**Title:** {video_details['title']}")
+                    st.write(f"**Description:** {video_details['description']}")
+                    st.write(f"**Channel:** {video_details['channel_title']}")
+                    st.write(f"**Views:** {video_details['views']:,}")
+                    st.write(f"**Published At:** {video_details['published_at']}")
+                    try:
+                        transcript = YouTubeTranscriptApi.get_transcript(video_details['video_id'], languages=['fr'])
+                        transcript_text = " ".join([entry['text'] for entry in transcript])
+                        word_count = len(transcript_text.split())
+                        st.write(f"**Transcript:** {transcript_text}")
+                        st.write(f"**Word Count:** {word_count}")
+                    except CouldNotRetrieveTranscript:
+                        st.error("Could not retrieve transcript for the video.")
+                        transcript_text = ""
+
+                # Limiter le transcript à 250 mots
+                transcript_words = transcript_text.split()
+                if len(transcript_words) > 250:
+                    transcript_text = " ".join(transcript_words[:250])
 
                 optimized_title = generate_optimized_title(openai_api_key, video_details['title'], transcript_text, video_details['description'])
                 optimized_description = generate_optimized_description(openai_api_key, video_details['description'], transcript_text, video_details['title'])
 
-                st.write("### Optimized Video Details")
-                st.write(f"**Optimized Title:** {optimized_title}")
-                st.write(f"**Optimized Description:** {optimized_description}")
+                with st.expander("Optimized Title and Description"):
+                    st.write("### Optimized Video Details")
+                    st.write(f"**Optimized Title:** {optimized_title}")
+                    st.write(f"**Optimized Description:** {optimized_description}")
 
 if __name__ == "__main__":
     main()
