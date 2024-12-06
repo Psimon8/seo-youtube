@@ -37,9 +37,8 @@ def GPT35(prompt, systeme, secret_key, temperature=0.7, model="gpt-4o-mini", max
     response.raise_for_status()
     return response.json()["choices"][0]["message"]["content"]
 
-def generate_optimized_title(api_key: str, video_title: str) -> str:
-    prompt = (f"Analyse le titre suivant d'une vidéo YouTube et génère une version optimisée pour le référencement, en tenant compte des mots-clés, de l'engagement et des bonnes pratiques SEO : {video_title}")
-    system_message = (f"Analyse le titre suivant d'une vidéo YouTube et génère une version optimisée pour le référencement, en tenant compte des mots-clés, de l'engagement et des bonnes pratiques SEO : {video_title}")
+def generate_optimized_title(api_key: str, video_title: str, transcript: str) -> str:
+    prompt = (f"Analyse le titre et le contenu {transcript} suivant d'une vidéo YouTube et génère une version optimisée pour le référencement, en tenant compte des mots-clés, de l'engagement et des bonnes pratiques SEO : {video_title}")
     system_message = (f"Vous êtes un assistant de rédaction compétent et expérimenté, spécialisé dans l'optimisation SEO des contenus, "
     "et particulièrement dans la création de titres optimisés pour YouTube. "
     "Votre mission est de rédiger des titres engageants, informatifs et performants en termes de SEO, adaptés aux attentes de l'audience et aux bonnes pratiques de référencement. "
@@ -59,11 +58,11 @@ def generate_optimized_title(api_key: str, video_title: str) -> str:
     )
     return GPT35(prompt, system_message, api_key)
 
-def generate_optimized_description(api_key: str, video_description: str) -> str:
+def generate_optimized_description(api_key: str, video_description: str, transcript: str) -> str:
     if not video_description:
         return "No Original Description"
 
-    prompt = (f"Analyse la description suivante d'une vidéo YouTube et génère une version optimisée pour le référencement : {video_description}")
+    prompt = (f"Analyse la description et le contenu {transcript} suivante d'une vidéo YouTube et génère une version optimisée pour le référencement : {video_description}")
     system_message = (f"Vous êtes un assistant de rédaction compétent et expérimenté, spécialisé dans l'optimisation SEO des contenus, "
     "et particulièrement dans la création de descriptions optimisées pour YouTube. "
     "Votre mission est de rédiger des descriptions de vidéos engageantes, informatives et performantes en termes de SEO, adaptées aux attentes de l'audience et aux bonnes pratiques de référencement. "
@@ -100,7 +99,8 @@ def get_video_details(api_key: str, video_url: str) -> Optional[dict]:
             'description': video_data['snippet']['description'],
             'views': int(video_data['statistics'].get('viewCount', 0)),
             'published_at': video_data['snippet']['publishedAt'],
-            'channel_title': video_data['snippet']['channelTitle']
+            'channel_title': video_data['snippet']['channelTitle'],
+            'video_id': video_id
         }
     except Exception as e:
         st.error(f"Error fetching video details: {e}")
@@ -130,8 +130,15 @@ def main():
                 st.write(f"**Views:** {video_details['views']:,}")
                 st.write(f"**Published At:** {video_details['published_at']}")
 
-                optimized_title = generate_optimized_title(openai_api_key, video_details['title'])
-                optimized_description = generate_optimized_description(openai_api_key, video_details['description'])
+                try:
+                    transcript = YouTubeTranscriptApi.get_transcript(video_details['video_id'])
+                    transcript_text = " ".join([entry['text'] for entry in transcript])
+                except CouldNotRetrieveTranscript:
+                    st.error("Could not retrieve transcript for the video.")
+                    transcript_text = ""
+
+                optimized_title = generate_optimized_title(openai_api_key, video_details['title'], transcript_text)
+                optimized_description = generate_optimized_description(openai_api_key, video_details['description'], transcript_text)
 
                 st.write("### Optimized Video Details")
                 st.write(f"**Optimized Title:** {optimized_title}")
