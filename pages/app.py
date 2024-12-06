@@ -37,8 +37,8 @@ def GPT35(prompt, systeme, secret_key, temperature=0.7, model="gpt-4o-mini", max
     response.raise_for_status()
     return response.json()["choices"][0]["message"]["content"]
 
-def generate_optimized_title(api_key: str, video_title: str, transcript: str) -> str:
-    prompt = (f"Analyse le titre et le contenu {transcript} suivant d'une vidéo YouTube et génère une version optimisée pour le référencement, en tenant compte des mots-clés, de l'engagement et des bonnes pratiques SEO : {video_title}")
+def generate_optimized_title(api_key: str, video_title: str, transcript: str, video_description: str) -> str:
+    prompt = (f"Analyse le titre: {video_description}, la description: {video_description} et le contenu {transcript} suivant d'une vidéo YouTube et génère une version optimisée pour le référencement, en tenant compte des mots-clés, de l'engagement et des bonnes pratiques SEO")
     system_message = (f"Vous êtes un assistant de rédaction compétent et expérimenté, spécialisé dans l'optimisation SEO des contenus, "
     "et particulièrement dans la création de titres optimisés pour YouTube. "
     "Votre mission est de rédiger des titres engageants, informatifs et performants en termes de SEO, adaptés aux attentes de l'audience et aux bonnes pratiques de référencement. "
@@ -49,7 +49,7 @@ def generate_optimized_title(api_key: str, video_title: str, transcript: str) ->
     "Ajouter un mot-clé secondaire ou un complément descriptif. Insérer des éléments engageants (chiffres, questions, superlatifs) pour inciter au clic. Utiliser les ? et ! pour impacter. "
     "Utilisation des bonnes pratiques SEO : Respecter une longueur idéale de 50 à 60 caractères pour éviter la coupure dans les résultats de recherche. "
     "Utiliser un langage clair, simple et engageant. Éviter les titres vagues ou génériques."
-    "Utiliser 1 ou 2 émojis pertinents pour capter l’attention. Utiliser les majuscules avec parcimonie pour mettre en valeur des mots-clés ou des éléments importants. "
+    "Utiliser 1 ou 2 émojis pertinents pour capter l’attention. Mais ne mets JAMAIS 2 émojis a la suite. Utiliser les majuscules avec parcimonie pour mettre en valeur des mots-clés ou des éléments importants. "
     "Incorporer des éléments attractifs : Ajouter un aspect unique ou une promesse claire (ex. : 'En 5 minutes', 'Sans expérience'). "
     "Mettre en avant une solution ou un avantage spécifique. Poser une question pour capter l’attention ou susciter la curiosité. "
     "Adapter au format vidéo et à l'audience : Pour des tutoriels, utiliser des formats comme 'Comment...', 'Guide pour...', 'Tuto'. "
@@ -58,11 +58,11 @@ def generate_optimized_title(api_key: str, video_title: str, transcript: str) ->
     )
     return GPT35(prompt, system_message, api_key)
 
-def generate_optimized_description(api_key: str, video_description: str, transcript: str) -> str:
+def generate_optimized_description(api_key: str, video_description: str, transcript: str, video_title:str) -> str:
     if not video_description:
         return "No Original Description"
 
-    prompt = (f"Analyse la description et le contenu {transcript} suivante d'une vidéo YouTube et génère une version optimisée pour le référencement : {video_description}")
+    prompt = (f"Analyse la description: {video_description}, le contenu :{transcript} et le titre: {video_title} suivante d'une vidéo YouTube et génère une description optimisée pour le référencement")
     system_message = (f"Vous êtes un assistant de rédaction compétent et expérimenté, spécialisé dans l'optimisation SEO des contenus, "
     "et particulièrement dans la création de descriptions optimisées pour YouTube. "
     "Votre mission est de rédiger des descriptions de vidéos engageantes, informatives et performantes en termes de SEO, adaptées aux attentes de l'audience et aux bonnes pratiques de référencement. "
