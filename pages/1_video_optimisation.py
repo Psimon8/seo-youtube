@@ -54,7 +54,7 @@ def generate_optimized_title(api_key: str, video_title: str, transcript: str, vi
     "Mettre en avant une solution ou un avantage spécifique. Poser une question pour capter l’attention ou susciter la curiosité. "
     "Adapter au format vidéo et à l'audience : Pour des tutoriels, utiliser des formats comme 'Comment...', 'Guide pour...', 'Tuto'. "
     "Pour des classements ou listes, utiliser 'Top X', 'Les X meilleurs...'. Pour des actualités ou analyses, inclure des termes comme '2024', 'Tendances', 'Analyse'."
-    "Réponds UNIQUEMENT avec la Réponse."
+    "Réponds UNIQUEMENT avec la Réponse. Ne mets JAMAIS 'Titre optimisé:' "
     )
     return GPT35(prompt, system_message, api_key)
 
@@ -82,7 +82,7 @@ def generate_optimized_description(api_key: str, video_description: str, transcr
     "Pour des classements ou listes, utiliser 'Top X', 'Les X meilleurs...'. Pour des analyses ou actualités, inclure des termes comme '2024', 'Tendances', 'Analyse'. "
     "Ajouter des appels à l’action : Inclure des CTA (Call To Action) pour inviter les spectateurs à liker, s’abonner ou visiter un lien spécifique. "
     "Votre priorité est de produire des descriptions engageantes et performantes en termes de SEO, tout en captant l’intérêt des spectateurs."
-    "Réponds UNIQUEMENT avec la Réponse."
+    "Réponds UNIQUEMENT avec la Réponse.Ne mets JAMAIS 'Description optimisée:'"
     )
     return GPT35(prompt, system_message, api_key)
 
