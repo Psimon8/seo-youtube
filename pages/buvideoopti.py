@@ -129,10 +129,12 @@ def main():
                 st.write(f"**Channel:** {video_details['channel_title']}")
                 st.write(f"**Views:** {video_details['views']:,}")
                 st.write(f"**Published At:** {video_details['published_at']}")
-
                 try:
                     transcript = YouTubeTranscriptApi.get_transcript(video_details['video_id'], languages=['fr'])
                     transcript_text = " ".join([entry['text'] for entry in transcript])
+                    word_count = len(transcript_text.split())
+                    st.write(f"**Transcript:** {transcript_text}")
+                    st.write(f"**Word Count:** {word_count}")
                 except CouldNotRetrieveTranscript:
                     st.error("Could not retrieve transcript for the video.")
                     transcript_text = ""
