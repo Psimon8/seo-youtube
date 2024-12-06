@@ -131,7 +131,7 @@ def main():
                 st.write(f"**Published At:** {video_details['published_at']}")
 
                 try:
-                    transcript = YouTubeTranscriptApi.get_transcript(video_details['video_id'])
+                    transcript = YouTubeTranscriptApi.get_transcript(video_details['video_id'], languages=['fr'])
                     transcript_text = " ".join([entry['text'] for entry in transcript])
                 except CouldNotRetrieveTranscript:
                     st.error("Could not retrieve transcript for the video.")
