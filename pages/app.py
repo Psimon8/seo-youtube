@@ -137,8 +137,8 @@ def main():
                     st.error("Could not retrieve transcript for the video.")
                     transcript_text = ""
 
-                optimized_title = generate_optimized_title(openai_api_key, video_details['title'], transcript_text)
-                optimized_description = generate_optimized_description(openai_api_key, video_details['description'], transcript_text)
+                optimized_title = generate_optimized_title(openai_api_key, video_details['title'], transcript_text, video_details['description'])
+                optimized_description = generate_optimized_description(openai_api_key, video_details['description'], transcript_text, video_details['title'])
 
                 st.write("### Optimized Video Details")
                 st.write(f"**Optimized Title:** {optimized_title}")
