@@ -154,14 +154,53 @@ def get_search_suggestions(api_key: str, query: str) -> Optional[List[str]]:
 
 def analyze_video_content(video_id: str, language: str = 'fr') -> str:
     try:
-        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[language])
-        text = ' '.join([entry['text'] for entry in transcript])
-        return text
-    except CouldNotRetrieveTranscript:
-        return "No Transcript"
+        # Vérification de débogage
+        if not hasattr(YouTubeTranscriptApi, 'get_transcript'):
+            return "Error: YouTubeTranscriptApi.get_transcript method not found. Please check the installation."
+        
+        # Essayer d'abord avec la langue spécifiée
+        transcript = None
+        transcript_language = "unknown"
+        
+        # Priorité à la langue demandée, puis fallback vers d'autres langues
+        for lang_codes in [[language], ['en'], ['fr'], [language, 'en']]:
+            try:
+                transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=lang_codes)
+                transcript_language = lang_codes[0]
+                break
+            except CouldNotRetrieveTranscript:
+                continue
+            except Exception as e:
+                st.warning(f"Erreur lors de la tentative avec {lang_codes}: {str(e)}")
+                continue
+        
+        # Si aucune langue spécifique ne fonctionne, essayer de récupérer la première disponible
+        if transcript is None:
+            try:
+                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                # Essayer de prendre la première transcription disponible
+                for transcript_obj in transcript_list:
+                    try:
+                        transcript = transcript_obj.fetch()
+                        transcript_language = transcript_obj.language_code
+                        break
+                    except Exception as e:
+                        continue
+            except Exception as e:
+                st.warning(f"Erreur lors de la liste des transcriptions: {str(e)}")
+        
+        if transcript:
+            text = ' '.join([entry['text'] for entry in transcript])
+            # Limiter à 200 mots pour l'affichage
+            words = text.split()
+            if len(words) > 200:
+                text = ' '.join(words[:200]) + "..."
+            return f"[{transcript_language}] {text}"
+        else:
+            return "No Transcript Available"
+            
     except Exception as e:
-        st.error(f"Error fetching transcript: {e}")
-        return ""
+        return f"Error: {str(e)}"
 
 def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_api_key: str, max_results: int) -> None:
     st.write(f"\nFetching top {max_results} videos for '{keyword}' in '{language}' language...")
