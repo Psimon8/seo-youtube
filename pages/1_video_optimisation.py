@@ -133,23 +133,43 @@ def main():
                     try:
                         # Essayer d'abord en français, puis en anglais, puis toute langue disponible
                         transcript = None
+                        transcript_language = "unknown"
+                        
+                        # Priorité aux langues françaises et anglaises
                         for lang_codes in [['fr'], ['en'], ['fr', 'en']]:
                             try:
                                 transcript = YouTubeTranscriptApi.get_transcript(video_details['video_id'], languages=lang_codes)
+                                transcript_language = lang_codes[0]
                                 break
-                            except:
+                            except CouldNotRetrieveTranscript:
                                 continue
                         
+                        # Si aucune langue spécifique ne fonctionne, essayer de récupérer la première disponible
                         if transcript is None:
-                            # Si aucune langue spécifique ne fonctionne, essayer sans spécifier de langue
-                            transcript = YouTubeTranscriptApi.get_transcript(video_details['video_id'])
+                            try:
+                                transcript_list = YouTubeTranscriptApi.list_transcripts(video_details['video_id'])
+                                # Essayer de prendre la première transcription disponible
+                                for transcript_obj in transcript_list:
+                                    try:
+                                        transcript = transcript_obj.fetch()
+                                        transcript_language = transcript_obj.language_code
+                                        break
+                                    except:
+                                        continue
+                            except Exception as e:
+                                st.warning(f"Impossible de récupérer la liste des transcriptions: {str(e)}")
                         
-                        transcript_text = " ".join([entry['text'] for entry in transcript])
-                        word_count = len(transcript_text.split())
-                        st.write(f"**Transcript:** {transcript_text}")
-                        st.write(f"**Word Count:** {word_count}")
+                        if transcript:
+                            transcript_text = " ".join([entry['text'] for entry in transcript])
+                            word_count = len(transcript_text.split())
+                            st.write(f"**Transcript ({transcript_language}):** {transcript_text}")
+                            st.write(f"**Word Count:** {word_count}")
+                        else:
+                            st.warning("Aucune transcription disponible pour cette vidéo.")
+                            transcript_text = ""
+                            
                     except Exception as e:
-                        st.warning("Could not retrieve transcript for the video. The SEO optimization will continue with the title and description only.")
+                        st.warning(f"Erreur lors de la récupération de la transcription: {str(e)}. L'optimisation SEO continuera avec le titre et la description uniquement.")
                         transcript_text = ""
 
                 # Limiter le transcript à 250 mots
