@@ -1,7 +1,4 @@
-requests
-nltk
-textblob
-youtube_transcript_api
-openai
 streamlit
-plotly
+requests
+youtube-transcript-api
+openai

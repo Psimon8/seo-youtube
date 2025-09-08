@@ -1,9 +1,27 @@
 import requests
 from typing import List, Optional, Dict
-from youtube_transcript_api import YouTubeTranscriptApi, CouldNotRetrieveTranscript
 import json
 import openai   
 import streamlit as st
+
+# Tentative d'importation de youtube-transcript-api avec gestion d'erreurs
+try:
+    from youtube_transcript_api import YouTubeTranscriptApi, CouldNotRetrieveTranscript
+    TRANSCRIPT_API_AVAILABLE = True
+except ImportError as e:
+    st.error(f"youtube-transcript-api n'est pas installé. Veuillez exécuter: pip install youtube-transcript-api")
+    TRANSCRIPT_API_AVAILABLE = False
+    # Créer des classes fictives pour éviter les erreurs
+    class YouTubeTranscriptApi:
+        @staticmethod
+        def get_transcript(*args, **kwargs):
+            raise Exception("youtube-transcript-api not installed")
+        @staticmethod
+        def list_transcripts(*args, **kwargs):
+            raise Exception("youtube-transcript-api not installed")
+    
+    class CouldNotRetrieveTranscript(Exception):
+        pass
 
 # Configuration de la page Streamlit
 st.set_page_config(
@@ -153,11 +171,11 @@ def get_search_suggestions(api_key: str, query: str) -> Optional[List[str]]:
         return None
 
 def analyze_video_content(video_id: str, language: str = 'fr') -> str:
+    # Vérifier si la bibliothèque est disponible
+    if not TRANSCRIPT_API_AVAILABLE:
+        return "youtube-transcript-api n'est pas installé. Veuillez exécuter: pip install youtube-transcript-api"
+    
     try:
-        # Vérification de débogage
-        if not hasattr(YouTubeTranscriptApi, 'get_transcript'):
-            return "Error: YouTubeTranscriptApi.get_transcript method not found. Please check the installation."
-        
         # Essayer d'abord avec la langue spécifiée
         transcript = None
         transcript_language = "unknown"
@@ -171,7 +189,6 @@ def analyze_video_content(video_id: str, language: str = 'fr') -> str:
             except CouldNotRetrieveTranscript:
                 continue
             except Exception as e:
-                st.warning(f"Erreur lors de la tentative avec {lang_codes}: {str(e)}")
                 continue
         
         # Si aucune langue spécifique ne fonctionne, essayer de récupérer la première disponible
@@ -187,7 +204,7 @@ def analyze_video_content(video_id: str, language: str = 'fr') -> str:
                     except Exception as e:
                         continue
             except Exception as e:
-                st.warning(f"Erreur lors de la liste des transcriptions: {str(e)}")
+                pass
         
         if transcript:
             text = ' '.join([entry['text'] for entry in transcript])
@@ -197,10 +214,10 @@ def analyze_video_content(video_id: str, language: str = 'fr') -> str:
                 text = ' '.join(words[:200]) + "..."
             return f"[{transcript_language}] {text}"
         else:
-            return "No Transcript Available"
+            return "Aucune transcription disponible pour cette vidéo"
             
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"Erreur lors de la récupération de la transcription: {str(e)}"
 
 def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_api_key: str, max_results: int) -> None:
     st.write(f"\nFetching top {max_results} videos for '{keyword}' in '{language}' language...")
@@ -232,6 +249,10 @@ def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_ap
 
 def main():
     st.title("Youtube SEO Assistant")
+    
+    # Afficher un avertissement si la bibliothèque de transcription n'est pas disponible
+    if not TRANSCRIPT_API_AVAILABLE:
+        st.warning("⚠️ La bibliothèque youtube-transcript-api n'est pas installée. Les transcriptions ne seront pas disponibles. Pour résoudre ce problème, exécutez: `pip install youtube-transcript-api`")
     
     with st.sidebar:
         youtube_api_key = st.text_input("Enter your YouTube API key:")
