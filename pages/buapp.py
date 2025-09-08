@@ -401,7 +401,7 @@ def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_ap
         st.write(f"\nTop {max_results} Related Videos:")
         for i, video in enumerate(top_videos, 1):
             st.write(f"#{i} {video['original_title']} Channel: {video['channel_title']}")
-            st.write(f"URL: {video['url']} Category: {video['category']} Views: {video['views']:,} Length: {video['length']} Published at: {video['published_at']} Comments: {video['comments']:,}")
+            st.write(f"URL: {video['url']} Category: {category_dict.get(video['category'], 'Unknown')} Views: {video['views']:,} Length: {video['length']} Published at: {video['published_at']} Comments: {video['comments']:,}")
             
             with st.expander("Details"):
                 col1, col2, col3 = st.columns(3)
@@ -430,6 +430,50 @@ def main():
     with st.sidebar:
         youtube_api_key = st.text_input("Enter your YouTube API key:")
         openai_api_key = st.text_input("Enter your OpenAI API key:")
+        
+        # Section de test de transcription dans la sidebar
+        st.sidebar.markdown("---")
+        st.sidebar.header("🔧 Test Transcription")
+        test_video_id = st.sidebar.text_input("ID de vidéo:", value="cq9XRf7WblA")
+        
+        if st.sidebar.button("Tester"):
+            if test_video_id and TRANSCRIPT_API_AVAILABLE:
+                st.sidebar.write("🔍 Test en cours...")
+                
+                # Test simplifié avec différentes méthodes
+                methods_tested = []
+                
+                # Test 1: Sans langue
+                try:
+                    transcript = YouTubeTranscriptApi.get_transcript(test_video_id)
+                    st.sidebar.success(f"✅ Sans langue: {len(transcript)} entrées")
+                    methods_tested.append("sans_langue")
+                except Exception as e:
+                    st.sidebar.error(f"❌ Sans langue: {str(e)[:50]}...")
+                
+                # Test 2: Français
+                try:
+                    transcript = YouTubeTranscriptApi.get_transcript(test_video_id, languages=['fr'])
+                    st.sidebar.success(f"✅ Français: {len(transcript)} entrées")
+                    methods_tested.append("francais")
+                except Exception as e:
+                    st.sidebar.error(f"❌ Français: {str(e)[:50]}...")
+                
+                # Test 3: Anglais
+                try:
+                    transcript = YouTubeTranscriptApi.get_transcript(test_video_id, languages=['en'])
+                    st.sidebar.success(f"✅ Anglais: {len(transcript)} entrées")
+                    methods_tested.append("anglais")
+                except Exception as e:
+                    st.sidebar.error(f"❌ Anglais: {str(e)[:50]}...")
+                
+                # Test de la fonction principale
+                result = analyze_video_content(test_video_id, 'fr')
+                st.sidebar.write("**Résultat final:**")
+                st.sidebar.text(result[:200] + "..." if len(result) > 200 else result)
+            
+            elif not TRANSCRIPT_API_AVAILABLE:
+                st.sidebar.error("❌ youtube-transcript-api non installé")
     
     col1, col2 = st.columns(2)
     
@@ -453,56 +497,7 @@ def main():
         if not youtube_api_key or not openai_api_key:
             st.error("Please provide both YouTube API key and OpenAI API key.")
         else:
-                        process_keyword(keyword, language, youtube_api_key, openai_api_key, max_results)
-    
-    # Ajouter la section de test de transcription
-    test_specific_video()
+            process_keyword(keyword, language, youtube_api_key, openai_api_key, max_results)
 
 if __name__ == "__main__":
     main()
-
-    # Section de test de transcription
-    st.sidebar.markdown("---")
-    st.sidebar.header("🔧 Test Transcription")
-    test_video_id = st.sidebar.text_input("ID de vidéo:", value="cq9XRf7WblA")
-    
-    if st.sidebar.button("Tester"):
-        if test_video_id and TRANSCRIPT_API_AVAILABLE:
-            st.sidebar.write("🔍 Test en cours...")
-            
-            # Test simplifié avec différentes méthodes
-            methods_tested = []
-            
-            # Test 1: Sans langue
-            try:
-                transcript = YouTubeTranscriptApi.get_transcript(test_video_id)
-                st.sidebar.success(f"✅ Sans langue: {len(transcript)} entrées")
-                methods_tested.append("sans_langue")
-            except Exception as e:
-                st.sidebar.error(f"❌ Sans langue: {str(e)[:50]}...")
-            
-            # Test 2: Français
-            try:
-                transcript = YouTubeTranscriptApi.get_transcript(test_video_id, languages=['fr'])
-                st.sidebar.success(f"✅ Français: {len(transcript)} entrées")
-                methods_tested.append("francais")
-            except Exception as e:
-                st.sidebar.error(f"❌ Français: {str(e)[:50]}...")
-            
-            # Test 3: Anglais
-            try:
-                transcript = YouTubeTranscriptApi.get_transcript(test_video_id, languages=['en'])
-                st.sidebar.success(f"✅ Anglais: {len(transcript)} entrées")
-                methods_tested.append("anglais")
-            except Exception as e:
-                st.sidebar.error(f"❌ Anglais: {str(e)[:50]}...")
-            
-            # Test de la fonction principale
-            result = analyze_video_content(test_video_id, 'fr')
-            st.sidebar.write("**Résultat final:**")
-            st.sidebar.text(result[:200] + "..." if len(result) > 200 else result)
-        
-        elif not TRANSCRIPT_API_AVAILABLE:
-            st.sidebar.error("❌ youtube-transcript-api non installé")
-
-# ...existing code...
