@@ -172,52 +172,84 @@ def get_search_suggestions(api_key: str, query: str) -> Optional[List[str]]:
 
 def analyze_video_content(video_id: str, language: str = 'fr') -> str:
     """
-    MÉTHODE OPTIMALE pour récupérer les transcriptions YouTube
-    Hiérarchie de préférence:
-    1. Transcriptions manuelles dans la langue préférée
-    2. Transcriptions auto-générées dans la langue préférée  
-    3. Transcriptions traduites vers la langue préférée
-    4. Toute transcription disponible
+    Version simplifiée et robuste pour récupérer les transcriptions YouTube
+    Se concentre sur les méthodes qui fonctionnent vraiment
     """
     if not TRANSCRIPT_API_AVAILABLE:
         return "❌ youtube-transcript-api non installé. Exécutez: pip install youtube-transcript-api"
     
+    transcript = None
+    transcript_info = "Inconnu"
+    
     try:
-        # Utiliser la fonction optimisée
-        transcript_data = get_best_transcript(video_id, language)
+        # Méthode 1: Essayer avec la langue préférée
+        try:
+            transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[language])
+            transcript_info = f"✅ {language.upper()}"
+        except:
+            pass
         
-        if transcript_data:
-            transcript = transcript_data['transcript']
+        # Méthode 2: Essayer avec l'anglais si pas français
+        if transcript is None and language != 'en':
+            try:
+                transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
+                transcript_info = "✅ EN (Fallback)"
+            except:
+                pass
+        
+        # Méthode 3: Essayer avec le français si pas français
+        if transcript is None and language != 'fr':
+            try:
+                transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['fr'])
+                transcript_info = "✅ FR (Fallback)"
+            except:
+                pass
+        
+        # Méthode 4: Essayer sans spécifier de langue (auto-détection)
+        if transcript is None:
+            try:
+                transcript = YouTubeTranscriptApi.get_transcript(video_id)
+                transcript_info = "🤖 Auto-détecté"
+            except:
+                pass
+        
+        # Méthode 5: Essayer avec les langues les plus communes une par une
+        if transcript is None:
+            common_languages = ['en', 'fr', 'es', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh']
+            for lang in common_languages:
+                try:
+                    transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[lang])
+                    transcript_info = f"🌍 {lang.upper()} (Trouvé)"
+                    break
+                except:
+                    continue
+        
+        if transcript:
+            # Traitement du texte
             text = ' '.join([entry['text'] for entry in transcript])
-            
-            # Nettoyage et formatage du texte
             text = text.replace('\n', ' ').replace('  ', ' ').strip()
             
             # Statistiques
             word_count = len(text.split())
             char_count = len(text)
-            duration_seconds = transcript[-1]['start'] + transcript[-1]['duration'] if transcript else 0
-            duration_minutes = int(duration_seconds // 60)
+            
+            # Calculer la durée si possible
+            try:
+                duration_seconds = transcript[-1]['start'] + transcript[-1].get('duration', 0)
+                duration_minutes = int(duration_seconds // 60)
+                duration_info = f" • ⏱️ {duration_minutes}min"
+            except:
+                duration_info = ""
             
             # Limitation pour l'affichage
             words = text.split()
             display_text = text
-            if len(words) > 300:
-                display_text = ' '.join(words[:300]) + f"\n\n[...{word_count - 300} mots supplémentaires masqués...]"
+            if len(words) > 250:  # Réduire à 250 mots pour de meilleures performances
+                display_text = ' '.join(words[:250]) + f"\n\n📋 [...{word_count - 250} mots supplémentaires cachés...]"
             
-            # Informations sur la transcription
-            type_emoji = {
-                'manual': '✅',
-                'generated': '🤖', 
-                'translated_from_en': '🔄',
-                'translated_from_fr': '🔄'
-            }
-            
-            emoji = type_emoji.get(transcript_data['type'], '📝')
-            type_text = transcript_data['type'].replace('_', ' ').title()
-            
-            header = f"{emoji} {transcript_data['language_name']} ({type_text})"
-            stats = f"📊 {word_count} mots • {char_count} caractères • {duration_minutes}min"
+            # Format de retour
+            header = f"{transcript_info}"
+            stats = f"📊 {word_count} mots • {char_count} caractères{duration_info}"
             
             return f"{header}\n{stats}\n\n{display_text}"
             
@@ -225,7 +257,7 @@ def analyze_video_content(video_id: str, language: str = 'fr') -> str:
             return "❌ Aucune transcription disponible pour cette vidéo"
             
     except Exception as e:
-        return f"❌ Erreur: {str(e)[:100]}..."
+        return f"❌ Erreur générale: {str(e)[:150]}..."
 
 def get_available_transcripts(video_id: str) -> Dict[str, List[str]]:
     """
@@ -267,77 +299,96 @@ def get_available_transcripts(video_id: str) -> Dict[str, List[str]]:
 def get_best_transcript(video_id: str, preferred_language: str = 'fr') -> Optional[Dict]:
     """
     Récupère la meilleure transcription disponible selon une hiérarchie de préférence
-    Retourne un dictionnaire avec les informations de la transcription
+    Version corrigée avec gestion d'erreurs robuste
     """
     if not TRANSCRIPT_API_AVAILABLE:
         return None
     
     try:
-        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-        
-        # Hiérarchie de préférence
+        # Méthode 1: Essayer la méthode directe get_transcript avec différentes langues
         language_priority = [preferred_language]
         if preferred_language != 'en':
             language_priority.append('en')
         if preferred_language != 'fr':
             language_priority.append('fr')
         
-        # 1. Chercher d'abord les transcriptions manuelles dans l'ordre de préférence
+        # Essayer d'abord avec chaque langue individuellement
         for lang in language_priority:
-            for transcript in transcript_list:
-                if transcript.language_code == lang and not transcript.is_generated:
-                    return {
-                        'transcript': transcript.fetch(),
-                        'language': transcript.language_code,
-                        'language_name': transcript.language,
-                        'type': 'manual',
-                        'is_generated': False
-                    }
-        
-        # 2. Ensuite les transcriptions auto-générées dans l'ordre de préférence
-        for lang in language_priority:
-            for transcript in transcript_list:
-                if transcript.language_code == lang and transcript.is_generated:
-                    return {
-                        'transcript': transcript.fetch(),
-                        'language': transcript.language_code,
-                        'language_name': transcript.language,
-                        'type': 'generated',
-                        'is_generated': True
-                    }
-        
-        # 3. Essayer de traduire vers la langue préférée
-        if preferred_language in ['fr', 'en']:
-            for transcript in transcript_list:
-                try:
-                    if transcript.language_code != preferred_language:
-                        translated = transcript.translate(preferred_language)
-                        return {
-                            'transcript': translated.fetch(),
-                            'language': preferred_language,
-                            'language_name': f"Translated to {preferred_language}",
-                            'type': f'translated_from_{transcript.language_code}',
-                            'is_generated': True,
-                            'original_language': transcript.language_code
-                        }
-                except:
-                    continue
-        
-        # 4. Prendre la première transcription disponible
-        for transcript in transcript_list:
             try:
+                transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[lang])
                 return {
-                    'transcript': transcript.fetch(),
-                    'language': transcript.language_code,
-                    'language_name': transcript.language,
-                    'type': 'generated' if transcript.is_generated else 'manual',
-                    'is_generated': transcript.is_generated
+                    'transcript': transcript,
+                    'language': lang,
+                    'language_name': f"{lang.upper()}",
+                    'type': 'auto_detected',
+                    'is_generated': True  # On assume que c'est généré par défaut
                 }
-            except:
+            except Exception:
                 continue
+        
+        # Méthode 2: Essayer sans spécifier de langue (première disponible)
+        try:
+            transcript = YouTubeTranscriptApi.get_transcript(video_id)
+            return {
+                'transcript': transcript,
+                'language': 'auto',
+                'language_name': "Auto-détecté",
+                'type': 'auto_available',
+                'is_generated': True
+            }
+        except Exception:
+            pass
+        
+        # Méthode 3: Essayer avec list_transcripts si disponible
+        try:
+            if hasattr(YouTubeTranscriptApi, 'list_transcripts'):
+                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                
+                # Chercher d'abord les transcriptions manuelles
+                for transcript_obj in transcript_list:
+                    try:
+                        if transcript_obj.language_code in language_priority and not transcript_obj.is_generated:
+                            return {
+                                'transcript': transcript_obj.fetch(),
+                                'language': transcript_obj.language_code,
+                                'language_name': transcript_obj.language,
+                                'type': 'manual',
+                                'is_generated': False
+                            }
+                    except Exception:
+                        continue
+                
+                # Ensuite les transcriptions auto-générées
+                for transcript_obj in transcript_list:
+                    try:
+                        if transcript_obj.language_code in language_priority:
+                            return {
+                                'transcript': transcript_obj.fetch(),
+                                'language': transcript_obj.language_code,
+                                'language_name': transcript_obj.language,
+                                'type': 'generated',
+                                'is_generated': True
+                            }
+                    except Exception:
+                        continue
+                
+                # Prendre n'importe quelle transcription disponible
+                for transcript_obj in transcript_list:
+                    try:
+                        return {
+                            'transcript': transcript_obj.fetch(),
+                            'language': transcript_obj.language_code,
+                            'language_name': transcript_obj.language,
+                            'type': 'fallback',
+                            'is_generated': getattr(transcript_obj, 'is_generated', True)
+                        }
+                    except Exception:
+                        continue
+        except Exception:
+            pass
                 
     except Exception as e:
-        st.warning(f"Erreur lors de la récupération de la transcription: {str(e)}")
+        pass
     
     return None
 
@@ -350,7 +401,7 @@ def process_keyword(keyword: str, language: str, youtube_api_key: str, openai_ap
         st.write(f"\nTop {max_results} Related Videos:")
         for i, video in enumerate(top_videos, 1):
             st.write(f"#{i} {video['original_title']} Channel: {video['channel_title']}")
-            st.write(f"URL: {video['url']} Category: {category_dict.get(video['category'], 'Unknown')} Views: {video['views']:,} Length: {video['length']} Published at: {video['published_at']} Comments: {video['comments']:,}")
+            st.write(f"URL: {video['url']} Category: {video['category']} Views: {video['views']:,} Length: {video['length']} Published at: {video['published_at']} Comments: {video['comments']:,}")
             
             with st.expander("Details"):
                 col1, col2, col3 = st.columns(3)
@@ -402,7 +453,56 @@ def main():
         if not youtube_api_key or not openai_api_key:
             st.error("Please provide both YouTube API key and OpenAI API key.")
         else:
-            process_keyword(keyword, language, youtube_api_key, openai_api_key, max_results)
+                        process_keyword(keyword, language, youtube_api_key, openai_api_key, max_results)
+    
+    # Ajouter la section de test de transcription
+    test_specific_video()
 
 if __name__ == "__main__":
     main()
+
+    # Section de test de transcription
+    st.sidebar.markdown("---")
+    st.sidebar.header("🔧 Test Transcription")
+    test_video_id = st.sidebar.text_input("ID de vidéo:", value="cq9XRf7WblA")
+    
+    if st.sidebar.button("Tester"):
+        if test_video_id and TRANSCRIPT_API_AVAILABLE:
+            st.sidebar.write("🔍 Test en cours...")
+            
+            # Test simplifié avec différentes méthodes
+            methods_tested = []
+            
+            # Test 1: Sans langue
+            try:
+                transcript = YouTubeTranscriptApi.get_transcript(test_video_id)
+                st.sidebar.success(f"✅ Sans langue: {len(transcript)} entrées")
+                methods_tested.append("sans_langue")
+            except Exception as e:
+                st.sidebar.error(f"❌ Sans langue: {str(e)[:50]}...")
+            
+            # Test 2: Français
+            try:
+                transcript = YouTubeTranscriptApi.get_transcript(test_video_id, languages=['fr'])
+                st.sidebar.success(f"✅ Français: {len(transcript)} entrées")
+                methods_tested.append("francais")
+            except Exception as e:
+                st.sidebar.error(f"❌ Français: {str(e)[:50]}...")
+            
+            # Test 3: Anglais
+            try:
+                transcript = YouTubeTranscriptApi.get_transcript(test_video_id, languages=['en'])
+                st.sidebar.success(f"✅ Anglais: {len(transcript)} entrées")
+                methods_tested.append("anglais")
+            except Exception as e:
+                st.sidebar.error(f"❌ Anglais: {str(e)[:50]}...")
+            
+            # Test de la fonction principale
+            result = analyze_video_content(test_video_id, 'fr')
+            st.sidebar.write("**Résultat final:**")
+            st.sidebar.text(result[:200] + "..." if len(result) > 200 else result)
+        
+        elif not TRANSCRIPT_API_AVAILABLE:
+            st.sidebar.error("❌ youtube-transcript-api non installé")
+
+# ...existing code...
