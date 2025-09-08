@@ -131,13 +131,25 @@ def main():
                     st.write(f"**Views:** {video_details['views']:,}")
                     st.write(f"**Published At:** {video_details['published_at']}")
                     try:
-                        transcript = YouTubeTranscriptApi.get_transcript(video_details['video_id'], languages=['fr'])
+                        # Essayer d'abord en français, puis en anglais, puis toute langue disponible
+                        transcript = None
+                        for lang_codes in [['fr'], ['en'], ['fr', 'en']]:
+                            try:
+                                transcript = YouTubeTranscriptApi.get_transcript(video_details['video_id'], languages=lang_codes)
+                                break
+                            except:
+                                continue
+                        
+                        if transcript is None:
+                            # Si aucune langue spécifique ne fonctionne, essayer sans spécifier de langue
+                            transcript = YouTubeTranscriptApi.get_transcript(video_details['video_id'])
+                        
                         transcript_text = " ".join([entry['text'] for entry in transcript])
                         word_count = len(transcript_text.split())
                         st.write(f"**Transcript:** {transcript_text}")
                         st.write(f"**Word Count:** {word_count}")
-                    except CouldNotRetrieveTranscript:
-                        st.error("Could not retrieve transcript for the video.")
+                    except Exception as e:
+                        st.warning("Could not retrieve transcript for the video. The SEO optimization will continue with the title and description only.")
                         transcript_text = ""
 
                 # Limiter le transcript à 250 mots
